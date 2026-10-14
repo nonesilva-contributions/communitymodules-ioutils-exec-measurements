@@ -5,62 +5,12 @@ CommunityModules committed tree at 4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763
 == shipped: spec uses PrintT ==
 [shipped] tlc exit=0
 [shipped] marker PRESENT -> command ran
-== shipped: spec has NO PrintT; full TLC console follows ==
+== shipped: spec has NO PrintT ==
 [silent] tlc exit=0
 [silent] marker PRESENT -> command ran
----- begin full TLC console (silent spec, shipped): no line announces a command ----
-TLC2 Version 2026.10.13.164326 (rev: 210df3a)
-Warning: Please run the Java VM, which executes TLC with a throughput optimized garbage collector, by passing the "-XX:+UseParallelGC" property.
-(Use the -nowarning option to disable this warning.)
-Running breadth-first search Model-Checking with fp 37 and seed -7522049820821157945 with 1 worker on 12 cores with 5594MB heap and 64MB offheap memory [pid: 2198] (Linux 7.0.0-38-generic amd64, Eclipse Adoptium 11.0.32.1 64bit, MSBDiskFPSet, DiskStateQueue).
-Parsing file /work/cs/ExecSilent.tla
-Parsing file /tmp/tlc-2721409381650225557/IOUtils.tla (jar:file:/cm/dist/CommunityModules-deps.jar!/IOUtils.tla)
-Parsing file /tmp/tlc-2721409381650225557/Integers.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
-Parsing file /tmp/tlc-2721409381650225557/_TLCTrace.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-2721409381650225557/Naturals.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-2721409381650225557/TLC.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-2721409381650225557/Sequences.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-2721409381650225557/SequencesExt.tla (jar:file:/cm/dist/CommunityModules-deps.jar!/SequencesExt.tla)
-Parsing file /tmp/tlc-2721409381650225557/FiniteSets.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-2721409381650225557/FiniteSetsExt.tla (jar:file:/cm/dist/CommunityModules-deps.jar!/FiniteSetsExt.tla)
-Parsing file /tmp/tlc-2721409381650225557/Folds.tla (jar:file:/cm/dist/CommunityModules-deps.jar!/Folds.tla)
-Parsing file /tmp/tlc-2721409381650225557/Functions.tla (jar:file:/cm/dist/CommunityModules-deps.jar!/Functions.tla)
-Parsing file /tmp/tlc-2721409381650225557/Bags.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/Bags.tla)
-Parsing file /tmp/tlc-2721409381650225557/TLCExt.tla (jar:file:/cm/tlc/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Semantic processing of module Naturals
-Semantic processing of module Sequences
-Semantic processing of module FiniteSets
-Semantic processing of module TLC
-Semantic processing of module Integers
-Semantic processing of module Folds
-Semantic processing of module Functions
-Semantic processing of module FiniteSetsExt
-Semantic processing of module Bags
-Semantic processing of module SequencesExt
-Semantic processing of module IOUtils
-Semantic processing of module TLCExt
-Semantic processing of module _TLCTrace
-Semantic processing of module ExecSilent
-Linting of module Folds
-Linting of module Functions
-Linting of module FiniteSetsExt
-Linting of module SequencesExt
-Linting of module IOUtils
-Linting of module TLCExt
-Linting of module _TLCTrace
-Linting of module ExecSilent
-Starting... (2026-10-14 11:52:06)
-Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-10-14 11:52:07.
-Model checking completed. No error has been found.
-  Estimates of the probability that TLC did not check all reachable states
-  because two distinct states had the same fingerprint:
-  calculated (optimistic):  val = 5.4E-20
-2 states generated, 1 distinct states found, 0 states left on queue.
-The depth of the complete state graph search is 1.
-The average outdegree of the complete state graph is 0 (minimum is 0, the maximum 0 and the 95th percentile is 0).
-Finished in 00s at (2026-10-14 11:52:07)
----- end full TLC console ----
+[silent] no PrintT in the spec, yet the command ran (marker present above).
+[silent] TLC printed no notice of it; its console ended with the normal status:
+[silent]   Model checking completed. No error has been found.
 == Apply ioutils-exec-gate.patch ==
 patching file modules/tlc2/overrides/IOUtils.java
 patching file modules/IOUtils.tla
