@@ -5,8 +5,29 @@
  	private static Value runProcess(final ProcessBuilder processBuilder)
  			throws IOException, InterruptedException {
 +		if (!Boolean.getBoolean("tlc2.overrides.IOUtils.enableExec")) {
-+			throw new EvalException(EC.GENERAL, "IOUtils exec is disabled by default. Model-checking a specification that EXTENDS IOUtils would run an OS command. Set -Dtlc2.overrides.IOUtils.enableExec=true to allow it.");
++			throw new EvalException(EC.GENERAL, "IOUtils exec is disabled by default. Evaluating an IOUtils exec operator such as IOExec runs an OS command. Set -Dtlc2.overrides.IOUtils.enableExec=true to allow it.");
 +		}
  		// 3. Run command-line and receive its output.
  		final Process process = processBuilder/* .inheritIO() */.start();
  
+--- a/build.xml
++++ b/build.xml
+@@ -134,6 +134,7 @@
+ 			<!-- Report execution statistics as azure-pipelien -->
+ 			<sysproperty key="tlc2.TLC.ide" value="azure-pipeline"/>
+ 			<sysproperty key="util.ExecutionStatisticsCollector.id" value="01ed03e40ba44f278a934849dd2b1038"/>
++			<sysproperty key="tlc2.overrides.IOUtils.enableExec" value="true"/>
+ 			
+ 			<arg value="-fp"/>
+ 			<arg value="1"/>
+--- a/tests/IOUtilsUnixTests.tla
++++ b/tests/IOUtilsUnixTests.tla
+@@ -100,7 +100,7 @@
+ \* Run TLC with some spec depending on CommunityModules and CM on the classpath.
+ \* Pass an environment variable to the nested spec.
+ ASSUME(LET ret == IOEnvExec([SOME_NESTED_VAR |-> "SOME_VAL", B |-> "23"],
+-                            <<"java", "-cp", "modules:build/deps:build/modules:tlc/tla2tools.jar", "tlc2.TLC",
++                            <<"java", "-cp", "modules:build/deps:build/modules:tlc/tla2tools.jar", "-Dtlc2.overrides.IOUtils.enableExec=true", "tlc2.TLC",
+                                           "-config", "Counter.cfg", "tests/nested/CounterCM">>)
+                                                                  IN /\ PrintT(ret)
+                                                                     /\ ret.exitValue = 0

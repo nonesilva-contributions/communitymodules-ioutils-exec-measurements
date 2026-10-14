@@ -1,109 +1,137 @@
 # communitymodules-ioutils-exec-measurements
 
-Measurements behind a proposed change to
-[tlaplus/CommunityModules](https://github.com/tlaplus/CommunityModules): make the
-`IOUtils` exec operators opt-in, so that model-checking a specification does not
-run OS commands unless the person running the check explicitly allows it.
+A measurement for a proposed change to
+[tlaplus/CommunityModules](https://github.com/tlaplus/CommunityModules).
 
-`modules/tlc2/overrides/IOUtils.java` registers a TLC override
-(`tlc2.overrides.TLCOverrides`) that TLC loads by default. Its operators
-`IOExec`, `IOEnvExec`, `IOExecTemplate` and `IOEnvExecTemplate` start an OS
-command through a `ProcessBuilder`, and their `@TLAPlusOperator` annotations
-carry `warn = false`, so no warning is printed. A specification that
-`EXTENDS IOUtils` therefore runs commands of its own choosing while TLC checks
-it, on the machine of whoever runs the check. Source at commit
-`4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763`:
+The change: make the `IOUtils` exec operators opt-in. Today they run on any
+model check. The goal: a model check must not run OS commands unless the user
+turns them on.
+
+## The problem
+
+CommunityModules ships a TLC override class, `tlc2.overrides.IOUtils`. TLC loads
+it by default. Four operators run an OS command: `IOExec`, `IOEnvExec`,
+`IOExecTemplate`, and `IOEnvExecTemplate`. Each one starts a process with
+`ProcessBuilder`.
+
+So a spec that `EXTENDS IOUtils` can run commands when TLC checks it. The
+commands run on the machine of the user who runs the check.
+
+It is also quiet. TLC prints no message that a command ran. The subprocess output
+is captured into a record, not shown (`inheritIO` is commented out in the code).
+So the user sees nothing from the tool — only what the spec itself prints. The
+`ExecSilent` run proves this: it has no `PrintT`, the command still runs, and the
+full TLC console has no line about a command.
+
+The operators run only when the CommunityModules Java overrides are on TLC's
+classpath. That is the normal setup: the `deps` jar, the VS Code extension
+nightly, or the Toolbox library path. A plain `.tla` copy without the overrides
+does not execute.
+
+Source at commit `4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763`:
 <https://github.com/tlaplus/CommunityModules/blob/4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763/modules/tlc2/overrides/IOUtils.java>.
-
-This repository holds a benign specification that exercises one exec operator, a
-patch that adds an opt-in gate at the single point where a process is started,
-and a runner that builds CommunityModules in Docker both as shipped and with the
-patch, and model-checks the specification in each case. Same class as
-[vscode-tlaplus-mcp-bind-measurements](https://github.com/nonesilva-contributions/vscode-tlaplus-mcp-bind-measurements).
 
 ## Affected versions
 
-Measured in the git history of this module. `IOExec` was added on 2020-02-10
-(commit `9fb2baf`), so model-checking a spec that `EXTENDS IOUtils` has started
-OS commands since then; the `warn = false` that silences the override-loaded
-warning was added on 2020-03-04 (commit `59479c7`). The behaviour is unchanged at
-the measured HEAD, commit `4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763`.
-CommunityModules publishes rolling, date-stamped releases with no semantic
-version; every release from 2020-02-10 through the latest at the time of writing
-(`202610131629`, 2026-10-13) carries the exec operators, so all current releases
-are affected.
+The facts come from git history and the release tags.
+
+- `IOExec` first shipped in the release tagged `202002102301` (2020-02-10). An
+  earlier tag the same day, `202002101658`, does not have it.
+- It has shipped in every release since, up to the latest, `202610131629`
+  (2026-10-13), which is the commit measured here (`4c6c79b`).
+- 205 of the 206 date-stamped releases have it.
+
+CommunityModules uses date-stamped releases, not semantic versions.
+
+## What the gate does not break
+
+The gate sits only in `runProcess`, the one method the four exec operators use.
+Everything else keeps working by default:
+
+- Other CommunityModules modules (CSV, GraphViz, SVG, Json, ...) do not call the
+  exec operators. They are unaffected.
+- The other `IOUtils` operators (serialize, deserialize, `IOEnv`, `atoi`) do not
+  go through `runProcess`. They are unaffected.
+- The project's own test suite stays green. `ant test` passes because the patch
+  opts the tests in (see Results).
+
+The one change: a spec that calls `IOExec` on purpose now needs the opt-in flag.
+That is the goal, not a side effect.
 
 ## Run it
 
-Requirements: Docker. Nothing runs on the host.
+You need Docker. Nothing runs on the host.
 
 ```text
 ./run-docker.sh
 ```
 
-It starts `eclipse-temurin:11-jdk-jammy`, mounts this repository and a
-CommunityModules clone read-only (default `/home/data/oss/CommunityModules`,
-override with `CM=/path/to/CommunityModules`), copies the source into the
-container, checks it is at the pinned commit, and builds it with Apache Ant
-(`ant dist`, which fetches TLA+ tools v1.8.0). It then runs `tlc2.TLC` on
-`ExecFinding.tla` three times: the shipped build, the patched build with no
-option, and the patched build with the opt-in option. The spec's only effect is
-to write a marker file; the runner reports whether that file appeared.
+The script starts a digest-pinned `eclipse-temurin:11-jdk-jammy`. It mounts this
+repo and a CommunityModules clone, both read-only. The default clone is
+`/home/data/oss/CommunityModules`. Override it with `CM=/path/to/CommunityModules`.
 
-## The specification
+Inside the container it takes the committed tree at the pinned commit with
+`git archive`, so no local edits can leak in. It builds with Ant. The build
+downloads TLA+ tools v1.8.0. Then it runs the cases below, and runs the project's
+own `ant test` on the patched build.
 
-`ExecFinding.tla` evaluates
-`IOExec(<<"/bin/sh", "-c", "echo ... > ioexec-ran.marker">>)` while computing the
-initial state. The command is benign: it writes a marker file next to the run.
-The marker's presence is the observable sign that model-checking the spec
-executed the command.
+## The specifications
 
-## Cases and results
+- `ExecFinding.tla` calls `IOExec` inside `PrintT` while TLC builds the first
+  state. The command is benign. It writes `ioexec-ran.marker`.
+- `ExecSilent.tla` calls `IOExec` with no `PrintT`. It shows the silence. Its only
+  on-disk effect is the marker file `exec-silent.marker`.
 
-CommunityModules at commit `4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763`. Output in
-[`results/`](results/).
+If a marker appears, the command ran.
 
-| # | Build | TLC exit | Marker | Meaning |
-|---|-------|----------|--------|---------|
-| 1 | shipped (no gate) | 0 | present | checking the spec ran the command |
-| 2 | patched, default | 75 | absent | the command is blocked; TLC reports the gate error |
-| 3 | patched, opt-in (`-Dtlc2.overrides.IOUtils.enableExec=true`) | 0 | present | explicit opt-in still runs it |
+## Results
 
-What the rows establish:
+CommunityModules at commit `4c6c79b`. Full output in [`results/`](results/).
 
-- Row 1: a specification that `EXTENDS IOUtils` runs an OS command merely by being
-  model-checked, with no option asked for and no warning.
-- Row 2: with the gate, the default build refuses to start the process and TLC
-  reports the error; the command does not run.
-- Row 3: the gate is a switch, not a removal. Someone who wants the exec
-  operators enables them with one JVM option, so existing specifications keep
-  working. Every observation in row 1 flips in row 2 and returns in row 3, so the
-  measurement separates the defect from its fix.
+| Build | Case | TLC exit | Marker | Meaning |
+|-------|------|----------|--------|---------|
+| shipped | `ExecFinding` (PrintT) | 0 | present | the check ran the command |
+| shipped | `ExecSilent` (no PrintT) | 0 | present | it ran, and the console shows no notice |
+| patched | `ant test` | 0 | — | the fix keeps their test suite green |
+| patched | default, no opt-in | 75 | absent | blocked; TLC prints the gate error |
+| patched | opt-in (`-Dtlc2.overrides.IOUtils.enableExec=true`) | 0 | present | the user opted in, so it runs |
+
+What this shows:
+
+- The shipped build runs a command from a model check, with no option and no
+  notice.
+- The gate blocks it by default and names the switch in the error.
+- The gate is a switch, not a removal. One JVM option turns it back on.
+- The fix does not break the project's own tests.
 
 ## The patch
 
-`ioutils-exec-gate.patch` adds, at the top of the single `runProcess(ProcessBuilder)`
-method that all four exec operators route through, a check of the system property
-`tlc2.overrides.IOUtils.enableExec`. When it is not `true`, the method throws a
-TLC evaluation error (`EC.GENERAL`) before the process is started. The default is
-off. Nothing else changes.
+`ioutils-exec-gate.patch` changes three files:
 
-## Read in the code, not reproduced here
+- `modules/tlc2/overrides/IOUtils.java`: adds a check at the top of
+  `runProcess(ProcessBuilder)`, the one method all four exec operators use. If the
+  system property `tlc2.overrides.IOUtils.enableExec` is not `true`, it throws a
+  TLC error (`EC.GENERAL`) before the process starts. The default is off.
+- `build.xml`: passes the opt-in to the project's test run, so `ant test` still
+  runs the exec tests.
+- `tests/IOUtilsUnixTests.tla`: passes the opt-in to the nested child TLC that the
+  tests launch.
 
-- The single process-spawn point is `runProcess(final ProcessBuilder)` in
-  `modules/tlc2/overrides/IOUtils.java`; `IOExec`, `IOEnvExec`, `IOExecTemplate`
-  and `IOEnvExecTemplate` all reach it.
-- `tlc2.overrides.TLCOverrides` returns `IOUtils.class` on every path, so the
-  override loads by default.
-- The four exec operators' `@TLAPlusOperator` annotations carry `warn = false`,
-  so TLC prints no override-loaded warning for them.
+## Read in the code, not tested here
+
+- The one spawn point is `runProcess(final ProcessBuilder)` in
+  `modules/tlc2/overrides/IOUtils.java`. No other override class starts a process.
+- `tlc2.overrides.TLCOverrides` returns `IOUtils.class` on every path. So the
+  override always loads.
+- The exec operators set `warn = false`. That only hides the warning for an
+  override a spec loads but does not use. It does not affect a spec that uses
+  `IOExec`.
 
 ## Not measured, and why
 
 - Windows and macOS. Linux containers only.
-- Any command other than writing a marker file. The measurement only needs to
-  show that a command runs, not what a command can do.
-- The patched behaviour inside the TLA+ Toolbox or the VS Code extension; the
-  measurement runs TLC directly.
+- Any command other than writing a marker. The test only needs to show that a
+  command runs.
+- The TLA+ Toolbox and the VS Code extension. The test runs TLC directly.
 
 License: MIT.
