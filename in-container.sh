@@ -37,7 +37,7 @@ echo "---- begin full TLC console (silent spec, shipped): no line announces a co
 cat /work/cs/tlc.out
 echo "---- end full TLC console ----"
 
-echo "== Apply ioutils-exec-gate.patch (3 files) =="
+echo "== Apply ioutils-exec-gate.patch =="
 patch -p1 < /m/ioutils-exec-gate.patch
 rm -rf build dist
 

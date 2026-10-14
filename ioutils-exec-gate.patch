@@ -10,6 +10,19 @@
  		// 3. Run command-line and receive its output.
  		final Process process = processBuilder/* .inheritIO() */.start();
  
+--- a/modules/IOUtils.tla
++++ b/modules/IOUtils.tla
+@@ -14,6 +14,10 @@
+ (* perform side effects when executed by TLC with the Java overrides.      *)
+ (***************************************************************************)
+ 
++\* The external-process operators below (IOExec, IOEnvExec, IOExecTemplate,
++\* IOEnvExecTemplate) are disabled by default. Set the system property
++\* -Dtlc2.overrides.IOUtils.enableExec=true to allow TLC to run OS commands.
++
+ LOCAL INSTANCE TLC
+ LOCAL INSTANCE Integers
+ LOCAL INSTANCE Sequences
 --- a/build.xml
 +++ b/build.xml
 @@ -134,6 +134,7 @@

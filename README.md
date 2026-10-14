@@ -106,12 +106,13 @@ What this shows:
 
 ## The patch
 
-`ioutils-exec-gate.patch` changes three files:
+`ioutils-exec-gate.patch` changes four files:
 
 - `modules/tlc2/overrides/IOUtils.java`: adds a check at the top of
   `runProcess(ProcessBuilder)`, the one method all four exec operators use. If the
   system property `tlc2.overrides.IOUtils.enableExec` is not `true`, it throws a
   TLC error (`EC.GENERAL`) before the process starts. The default is off.
+- `modules/IOUtils.tla`: documents the opt-in flag in the module header.
 - `build.xml`: passes the opt-in to the project's test run, so `ant test` still
   runs the exec tests.
 - `tests/IOUtilsUnixTests.tla`: passes the opt-in to the nested child TLC that the
