@@ -1,0 +1,14 @@
+debconf: delaying package configuration, since apt-utils is not installed
+CommunityModules at 4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763
+== Case 1: shipped CommunityModules, no gate ==
+[shipped] tlc exit=0
+[shipped] marker PRESENT -> command ran
+== Apply ioutils-exec-gate.patch and rebuild ==
+patching file modules/tlc2/overrides/IOUtils.java
+== Case 2: gated build, default (no opt-in) ==
+[gated-default] tlc exit=75
+[gated-default] marker ABSENT -> command blocked
+Error: IOUtils exec is disabled by default. Model-checking a specification that EXTENDS IOUtils would run an OS command. Set -Dtlc2.overrides.IOUtils.enableExec=true to allow it.
+== Case 3: gated build, explicit opt-in ==
+[gated-optin] tlc exit=0
+[gated-optin] marker PRESENT -> command ran

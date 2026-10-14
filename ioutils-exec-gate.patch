@@ -1,0 +1,12 @@
+--- a/modules/tlc2/overrides/IOUtils.java
++++ b/modules/tlc2/overrides/IOUtils.java
+@@ -370,6 +370,9 @@
+ 	
+ 	private static Value runProcess(final ProcessBuilder processBuilder)
+ 			throws IOException, InterruptedException {
++		if (!Boolean.getBoolean("tlc2.overrides.IOUtils.enableExec")) {
++			throw new EvalException(EC.GENERAL, "IOUtils exec is disabled by default. Model-checking a specification that EXTENDS IOUtils would run an OS command. Set -Dtlc2.overrides.IOUtils.enableExec=true to allow it.");
++		}
+ 		// 3. Run command-line and receive its output.
+ 		final Process process = processBuilder/* .inheritIO() */.start();
+ 
