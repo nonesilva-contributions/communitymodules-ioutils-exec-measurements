@@ -1,30 +1,43 @@
+============================================================
+ IOUtils exec gate -- before/after measurement (in Docker)
+============================================================
 >> Installing build tools in the container (quiet, ~1 min)...
-debconf: delaying package configuration, since apt-utils is not installed
 CommunityModules committed tree at 4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763
-== Build shipped (no gate) -- compiling, quiet, ~1 min ==
-== shipped: spec uses PrintT ==
+
+== Build shipped CommunityModules (no gate) -- compiling, quiet, ~1 min ==
+
+== BEFORE (shipped): model-checking the spec runs an OS command ==
 [shipped] tlc exit=0
 [shipped] marker PRESENT -> command ran
-== shipped: spec has NO PrintT ==
 [silent] tlc exit=0
 [silent] marker PRESENT -> command ran
 [silent] no PrintT in the spec, yet the command ran (marker present above).
 [silent] TLC printed no notice of it; its console ended with the normal status:
 [silent]   Model checking completed. No error has been found.
-== Apply ioutils-exec-gate.patch ==
+
+== Apply ioutils-exec-gate.patch and rebuild ==
 patching file modules/tlc2/overrides/IOUtils.java
 patching file modules/IOUtils.tla
 patching file build.xml
 patching file tests/IOUtilsUnixTests.tla
-== project 'ant test' on the patched build -- their full suite, quiet, ~1-2 min ==
+
+== AFTER (their test suite): ant test on the patched build -- quiet, ~1-2 min ==
 [ant test] exit=0  (0 means the fix keeps their suite green)
-== gated: default, no opt-in ==
+
+== AFTER (gated): default, no opt-in -- the command is blocked ==
 [gated-default] tlc exit=75
 [gated-default] marker ABSENT -> command blocked
 [gated-default] GATE fired: message present AND marker absent
 Error: IOUtils exec is disabled by default. Evaluating an IOUtils exec operator such as IOExec runs an OS command. Set -Dtlc2.overrides.IOUtils.enableExec=true to allow it.
-== gated: explicit opt-in ==
+
+== AFTER (gated): explicit opt-in -- the command runs again ==
 [gated-optin] tlc exit=0
 [gated-optin] marker PRESENT -> command ran
 
+============================================================
+ SUMMARY
+ BEFORE: checking a spec that uses IOExec ran the OS command.
+ AFTER:  the gate blocks it by default; the project's test
+         suite stays green; explicit opt-in runs it again.
+============================================================
 == DONE: measurement complete ==
