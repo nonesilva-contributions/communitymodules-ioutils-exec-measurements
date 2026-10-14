@@ -5,6 +5,7 @@
 set -euo pipefail
 PIN=4c6c79bf6f3124dfa3a4fd3cfa9a92fe34c20763
 export DEBIAN_FRONTEND=noninteractive
+echo ">> Installing build tools in the container (quiet, ~1 min)..."
 apt-get update -qq >/dev/null && apt-get install -y -qq ant patch git >/dev/null
 
 git config --global --add safe.directory /cm-src
@@ -25,7 +26,7 @@ runtlc() {
     else echo "[$1] marker ABSENT -> command blocked"; fi )
 }
 
-echo "== Build shipped (no gate) =="
+echo "== Build shipped (no gate) -- compiling, quiet, ~1 min =="
 ant -q -Dtimestamp=fixed dist >/tmp/b1.log 2>&1 || { echo "shipped build failed"; tail -40 /tmp/b1.log; exit 1; }
 
 echo "== shipped: spec uses PrintT =="
@@ -41,7 +42,7 @@ echo "== Apply ioutils-exec-gate.patch =="
 patch -p1 < /m/ioutils-exec-gate.patch
 rm -rf build dist
 
-echo "== project 'ant test' on the patched build (exec opted in by the patch) =="
+echo "== project 'ant test' on the patched build -- their full suite, quiet, ~1-2 min =="
 set +e
 ant -q -Dtimestamp=fixed -Dskip.download=true test >/tmp/b2.log 2>&1
 TESTCODE=$?
@@ -60,3 +61,6 @@ grep -i "disabled by default" /work/c2/tlc.out | head -1 || true
 
 echo "== gated: explicit opt-in =="
 runtlc gated-optin /work/c3 ExecFinding ioexec-ran.marker "-Dtlc2.overrides.IOUtils.enableExec=true"
+
+echo
+echo "== DONE: measurement complete =="
